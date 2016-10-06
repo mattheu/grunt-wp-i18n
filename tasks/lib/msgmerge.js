@@ -6,11 +6,15 @@
  * Licensed under the MIT license.
  */
 
-'use strict';
+'use strict'
+
+const gulpUtil = require( 'gulp-util' )
+const spawn    = require('child_process').spawn
+const path     = require( 'path' )
 
 exports.init = function( grunt ) {
-	var exports = {},
-		path = require( 'path' );
+
+	var exports = {}
 
 	/**
 	 * Uses gettext msgmerge to merge a .pot file into a .po
@@ -20,20 +24,20 @@ exports.init = function( grunt ) {
 	 * @param callback function Callback to call after being done
 	 */
 	exports.msgMerge = function( from, to, callback ) {
-		grunt.util.spawn( {
-			cmd:  'msgmerge',
-			args: [ '--update', '--backup=none', to, from ]
-		}, function( error, result, code ) {
 
-			if ( error ) {
-				grunt.log.error( 'msgmerge error:' + error );
-			} else {
-				grunt.log.ok( 'POT file merged into ' + path.relative( process.cwd(), to ) );
-			}
+		var msgmerge = spawn( 'msgmerge', [ '--update', '--backup=none', to, from ] )
 
-			callback();
-		} );
-	};
+		msgmerge.stderr.on( 'data', (data) => {
+			gulpUtil.fail( 'msgmerge error:' + data )
+			callback()
+		})
+
+		msgmerge.stdout.on( 'data', (data) => {
+			gulpUtil.log( 'POT file merged into ' + path.relative( process.cwd(), to ) )
+			callback()
+		})
+
+	}
 
 	/**
 	 * Searches around a .pot file for .po files
@@ -43,10 +47,11 @@ exports.init = function( grunt ) {
 	 * @return string[] poFiles around the given potFile
 	 */
 	exports.searchPoFiles = function( potFile, type ) {
-		var searchPath = path.join( path.dirname( potFile ), '*.po' );
+		return fs.readdirSync( path.dirname( potFile ) )
+			.filter( function( fileName ) {
+				return fileName.match( /^.+\.po/ )
+			} )
+	}
 
-		return grunt.file.expand( searchPath );
-	};
-
-	return exports;
-};
+	return exports
+}

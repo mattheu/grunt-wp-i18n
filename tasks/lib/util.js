@@ -8,7 +8,10 @@
 
 'use strict';
 
-exports.init = function( grunt ) {
+const fs = require('fs');
+const fileExists = require('file-exists');
+
+exports.init = function() {
 	var _ = require( 'underscore' ),
 		crypto = require( 'crypto' ),
 		exports = {};
@@ -71,8 +74,8 @@ exports.init = function( grunt ) {
 	exports.getLocalConfig = function() {
 		var localConfig = {};
 
-		if ( grunt.file.exists( 'config.json' ) ) {
-			localConfig = grunt.file.readJSON( 'config.json' );
+		if ( fileExists( 'config.json' ) ) {
+			localConfig = fs.readFileSync( 'config.json' ).toString();
 		}
 
 		return localConfig;

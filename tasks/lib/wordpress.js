@@ -8,7 +8,11 @@
 
 'use strict';
 
-exports.init = function( grunt ) {
+const fileExists = require('file-exists');
+const fs = require('fs');
+const gutil = require('gulp-util');
+
+exports.init = function() {
 	var exports = {},
 		path = require( 'path' );
 
@@ -27,13 +31,15 @@ exports.init = function( grunt ) {
 			file = exports.getMainFile();
 		}
 
-		if ( file && grunt.file.exists( file ) ) {
+		if ( fileExists( file ) ) {
+
 			pattern = new RegExp( name + ':(.*)$', 'mi' );
-			matches = grunt.file.read( file ).match( pattern );
+			matches = fs.readFileSync( file ).toString().match( pattern );
 
 			if ( matches ) {
 				return matches.pop().trim();
 			}
+
 		}
 
 		if ( 'Text Domain' === name ) {
@@ -58,30 +64,25 @@ exports.init = function( grunt ) {
 			pluginFile = slug + '.php',
 			found;
 
-		if ( 'wp-theme' === type || ( 'undefined' === typeof type && grunt.file.exists( 'style.css' ) ) ) {
+		if ( 'wp-theme' === type || ( 'undefined' === typeof type && fileExists( 'style.css' ) ) ) {
 			return 'style.css';
 		}
 
-		// Check if the main file exists.
-		if ( grunt.file.exists( pluginFile ) && exports.getHeader( 'Plugin Name', pluginFile ) ) {
+		if ( fileExists( pluginFile ) && exports.getHeader( 'Plugin Name', pluginFile ) ) {
 			return pluginFile;
 		}
 
 		// Search for plugin headers in php files in the main directory.
-		grunt.file.expandMapping( ['*.php'], '' ).forEach(function( f ) {
-			f.src.filter(function( filepath ) {
-				// Warn on and remove invalid source files (if nonull was set).
-				if ( ! grunt.file.exists( filepath ) ) {
-					grunt.log.warn( 'Source file "' + filepath + '" not found.' );
-					return false;
-				} else {
-					return true;
-				}
-			}).forEach(function( filepath ) {
-				if ( exports.getHeader( 'Plugin Name', filepath ) ) {
-					found = filepath;
-				}
-			});
+		fs.readdirSync( './' ).forEach( function( fileName ) {
+
+			if ( ! fileName.match( /^.+\.php/ ) ) {
+				return;
+			}
+
+			if ( exports.getHeader( 'Plugin Name', process.cwd() + '/' + fileName ) ) {
+				found = process.cwd() + '/' + fileName;
+			}
+
 		});
 
 		return found;
